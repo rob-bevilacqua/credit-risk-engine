@@ -3,6 +3,9 @@ import os
 from pathlib import Path
 
 class Datafetcher():
+    """
+    Service object to manage authentication, downloading, and extraction of datasets.
+    """
     def download_data(self, data_dir: Path) -> None:
         api = KaggleApi()
         api.authenticate()
