@@ -1,5 +1,5 @@
 # credit-risk-engine
-Quantatative risk framework to estimate expected credit loss by modelling probability of default on a home credit default dataset
+Quantatative risk framework to estimate expected credit loss by modelling probability of default on a home credit default dataset. Just a way for me to get more familiar with credit risk engineering.
 
 ## Requirements
 
