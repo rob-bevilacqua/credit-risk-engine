@@ -20,7 +20,7 @@ Quantatative risk framework to estimate expected credit loss by modelling probab
     ```bash
     uv sync
     ```
-3. run the ingestion pipeline
+3. run the model pipeline (Must have kaggle api key or csv in ./data/raw folder)
     ```bash
     uv run main.py
     ```
