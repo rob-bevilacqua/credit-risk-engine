@@ -23,35 +23,49 @@ class DataProcessor:
         # feature extraction
         df = self._add_ratios(df)
 
+        # deep copy to unfragment
+        df = df.copy() 
+    
+        df = TypeOptimizer.optimize(df)
+
         output_file = self.processed_dir / "train_transformed.parquet"
         df.to_parquet(output_file, engine="pyarrow", index=False)
         print(f"Success! Processed data saved to: {output_file}")
 
     def _clean_financials(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Handles 0-income edge cases and creates binary flags."""
-        # Create a flag for zero income
-        df['FLAG_ZERO_INCOME'] = (df['AMT_INCOME_TOTAL'] == 0).astype(int)
+        """Handles 0-income edge cases and creates binary flags using a dictionary to prevent fragmentation."""
         
-        # Replace 0 with nan
-        df['AMT_INCOME_TOTAL'] = df['AMT_INCOME_TOTAL'].replace(0, np.nan)
-        df['AMT_INCOME_TOTAL'] = df['AMT_INCOME_TOTAL'].fillna(df['AMT_INCOME_TOTAL'].median())
+        # Pre-calculate median 
+        income_median = df['AMT_INCOME_TOTAL'].replace(0, np.nan).median()
         
-        # nan for employed > 70 years, as its an outlier
-        df['DAYS_EMPLOYED_ANOM'] = df["DAYS_EMPLOYED"] >= 25567
-        df['DAYS_EMPLOYED'] = df['DAYS_EMPLOYED'].replace({25567: np.nan})
+        new_features = {}
+        
+        new_features['FLAG_ZERO_INCOME'] = (df['AMT_INCOME_TOTAL'] == 0).astype(int)
+        
+        # 70-year threshold for days employed seems fair
+        new_features['DAYS_EMPLOYED_ANOM'] = (df["DAYS_EMPLOYED"] >= 25567).astype(int)
+        
+        # Use pd.concat to add all new columns at once so it doesnt complain
+        df = pd.concat([df, pd.DataFrame(new_features, index=df.index)], axis=1)
+        
+        # Modifying existing columns in-place should be alright
+        df['AMT_INCOME_TOTAL'] = df['AMT_INCOME_TOTAL'].replace(0, np.nan).fillna(income_median)
+        df['DAYS_EMPLOYED'] = df['DAYS_EMPLOYED'].replace({365243: np.nan, 25567: np.nan})
 
         return df
     
     def _add_ratios(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Calculates standard credit risk ratios."""
-        # Avoid division by zero with a small epsilon
+        """Calculates standard credit risk ratios using a non-fragmenting approach."""
         eps = 1e-6
         
-        df['CREDIT_TO_INCOME_RATIO'] = df['AMT_CREDIT'] / (df['AMT_INCOME_TOTAL'] + eps)
-        df['ANNUITY_TO_INCOME_RATIO'] = df['AMT_ANNUITY'] / (df['AMT_INCOME_TOTAL'] + eps)
-        df['GOODS_PRICE_TO_CREDIT_RATIO'] = df['AMT_GOODS_PRICE'] / (df['AMT_CREDIT'] + eps)
+        # Create a dictionary for the new features
+        feature_dict = {
+            'CREDIT_TO_INCOME_RATIO': df['AMT_CREDIT'] / (df['AMT_INCOME_TOTAL'] + eps),
+            'ANNUITY_TO_INCOME_RATIO': df['AMT_ANNUITY'] / (df['AMT_INCOME_TOTAL'] + eps),
+            'GOODS_PRICE_TO_CREDIT_RATIO': df['AMT_GOODS_PRICE'] / (df['AMT_CREDIT'] + eps),
+            'DAYS_EMPLOYED_PERCENT': df['DAYS_EMPLOYED'] / df['DAYS_BIRTH']
+        }
         
-        # Age-based features
-        df['DAYS_EMPLOYED_PERCENT'] = df['DAYS_EMPLOYED'] / df['DAYS_BIRTH']
-        
-        return df
+        # Join everything at once
+        # This prevents fragmentation warnings
+        return pd.concat([df, pd.DataFrame(feature_dict, index=df.index)], axis=1)
