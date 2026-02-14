@@ -5,7 +5,11 @@ from pathlib import Path
 from src.utils import TypeOptimizer
 
 class DataProcessor:
-    """Class for processing csv data into a format for regression"""
+    """
+    Class for processing csv data into a format for regression
+    Currently only makes use of the main "application_train" dataset
+    Goal is to eventually join tables to improve performance
+    """
     def __init__(self, raw_dir: Path, processed_dir: Path):
         self.raw_dir = raw_dir
         self.processed_dir = processed_dir
@@ -35,11 +39,12 @@ class DataProcessor:
     def _clean_financials(self, df: pd.DataFrame) -> pd.DataFrame:
         """Handles 0-income edge cases and creates binary flags using a dictionary to prevent fragmentation."""
         
-        # Pre-calculate median 
+        # Pre-calculate median and replace 0 with nan so it isnt factored to median
         income_median = df['AMT_INCOME_TOTAL'].replace(0, np.nan).median()
         
         new_features = {}
         
+        # new features mapped to dict to avoid fragmentation
         new_features['FLAG_ZERO_INCOME'] = (df['AMT_INCOME_TOTAL'] == 0).astype(int)
         
         # 70-year threshold for days employed seems fair
@@ -56,6 +61,7 @@ class DataProcessor:
     
     def _add_ratios(self, df: pd.DataFrame) -> pd.DataFrame:
         """Calculates standard credit risk ratios using a non-fragmenting approach."""
+        # avoid /0 error
         eps = 1e-6
         
         # Create a dictionary for the new features
