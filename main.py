@@ -4,20 +4,30 @@ from src.processor import DataProcessor
 from src.model import RiskModel
 
 def main():
-    data_dir = Path("data/raw")
-    data_dir.mkdir(parents=True, exist_ok=True)
-    fetch = Datafetcher()
-    if not any(data_dir.iterdir()):
-        fetch.download_data(data_dir)
-    # data downloaded and unzipped
-    # next task, transform data
-    proc_dir = Path("data/processed")
-    proc = DataProcessor(data_dir, proc_dir)
-    proc.process_pipeline()
+    # Setup Paths
+    base_path = Path(__file__).parent
+    raw_data_dir = base_path / "data" / "raw"
+    processed_data_dir = base_path / "data" / "processed"
+    model_dir = base_path / "models"
+    
+    processed_file = processed_data_dir / "train_transformed.parquet"
 
-    model_dir = Path("models")
-    print("Hello from credit-risk-engine!")
+    # Extraction to csv
+    fetcher = Datafetcher()
+    # Check if data exists before downloading
+    if not (raw_data_dir / "application_train.csv").exists():
+        fetcher.download_data(raw_data_dir)
 
+    # Transformation CSV -> Optimized Parquet
+    processor = DataProcessor(raw_data_dir, processed_data_dir)
+    processor.process_pipeline()
+
+    # Modeling Parquet -> Logistic Regression
+    # This performs the split, scaling, and training
+    trainer = RiskModel(model_dir)
+    trainer.run_training_pipeline(processed_file)
+
+    print("\nFull Pipeline execution complete.")
 
 if __name__ == "__main__":
     main()

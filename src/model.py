@@ -43,9 +43,9 @@ class RiskModel:
         probs = self.clf.predict_proba(X_test_scaled)[:, 1]
         auc_score = roc_auc_score(y_test, probs)
 
-        print("\n" + "="*30)
+        print("\n")
         print(f"BASELINE ROC-AUC: {auc_score:.4f}")
-        print("="*30)
+        print("\n")
         
         # Save Artifacts
         joblib.dump(self.clf, self.model_dir / "logistic_model.pkl")
