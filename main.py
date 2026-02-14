@@ -1,6 +1,7 @@
 from src.datafetch import Datafetcher
 from pathlib import Path
 from src.processor import DataProcessor
+from src.model import RiskModel
 
 def main():
     data_dir = Path("data/raw")
@@ -13,6 +14,8 @@ def main():
     proc_dir = Path("data/processed")
     proc = DataProcessor(data_dir, proc_dir)
     proc.process_pipeline()
+
+    model_dir = Path("models")
     print("Hello from credit-risk-engine!")
 
 
