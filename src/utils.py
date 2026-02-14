@@ -3,7 +3,7 @@ import numpy as np
 
 class TypeOptimizer:
     """Downcasts numeric types to save memory"""
-
+    
     @staticmethod
     def optimize_floats(df: pd.DataFrame) -> pd.DataFrame:
         floats = df.select_dtypes(include=['float64']).columns
