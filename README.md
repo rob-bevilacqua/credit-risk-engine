@@ -24,3 +24,19 @@ Quantatative risk framework to estimate expected credit loss by modelling probab
     ```bash
     uv run main.py
     ```
+
+## Project Roadmap
+- [x] Establish baseline Logistic Regression model (AUC: 0.725)
+- [ ] **Bureau Data Integration**: Aggregate `bureau.csv` to capture historical credit behavior
+- [ ] **Automated Feature Selection**: Implement correlation filters to prune redundant variables
+- [ ] **Ratio Synthesis**: Develop debt-to-income and annuity-to-credit features
+
+### Phase 2: Mathematical Research (Low-Level)
+- [ ] **NumPy Engine**: Develop a vectorized Logistic Regression class from scratch
+- [ ] **Optimization Suite**: Implement manual Sigmoid, Log-Loss, and Gradient Descent functions
+- [ ] **Benchmarking**: Create a validation framework to compare manual model weights against `scikit-learn`
+
+### Phase 3: Systems & Performance Engineering
+- [ ] **Go Port**: Re-implement core math utilities in Go for compiled performance
+- [ ] **Concurrency Lab**: Use Goroutines to benchmark parallel processing against Python’s GIL
+- [ ] **Streaming Statistics**: Implement Welford’s Algorithm for out-of-core feature scaling
