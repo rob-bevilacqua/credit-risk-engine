@@ -8,7 +8,6 @@ Quantatative risk framework to estimate expected credit loss by modelling probab
    - Follow the [Kaggle CLI documentation](https://github.com/Kaggle/kaggle-cli/blob/main/docs/README.md) for setup.
    - Alternatively, manually download the CSVs from the [Home Credit Default Risk Competition](https://www.kaggle.com/competitions/home-credit-default-risk/overview).
 
-# Getting Started
 ## Getting Started
 
 1. Clone the repository:
