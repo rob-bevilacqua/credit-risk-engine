@@ -51,7 +51,9 @@ class DataProcessor:
         new_features = {}
         
         # new features mapped to dict to avoid fragmentation
-        new_features['FLAG_ZERO_INCOME'] = (df['AMT_INCOME_TOTAL'] == 0).astype(int)
+
+        # 0 income flag has 0 weight in model
+        # new_features['FLAG_ZERO_INCOME'] = (df['AMT_INCOME_TOTAL'] == 0).astype(int)
         
         # 70-year threshold for days employed seems fair
         new_features['DAYS_EMPLOYED_ANOM'] = (df["DAYS_EMPLOYED"] >= 25567).astype(int)
@@ -72,6 +74,7 @@ class DataProcessor:
         
         #columns containing info on flag documents
         doc_cols = [c for c in df.columns if 'FLAG_DOCUMENT' in c]
+        contact_cols = ['FLAG_MOBIL', 'FLAG_EMP_PHONE', 'FLAG_WORK_PHONE', 'FLAG_PHONE', 'FLAG_EMAIL', 'FLAG_CONT_MOBILE']
 
         # Create a dictionary for the new features
         feature_dict = {
@@ -80,7 +83,8 @@ class DataProcessor:
             'GOODS_PRICE_TO_CREDIT_RATIO': df['AMT_GOODS_PRICE'] / (df['AMT_CREDIT'] + eps),
             'DAYS_EMPLOYED_PERCENT': df['DAYS_EMPLOYED'] / df['DAYS_BIRTH'],
             'BU_UTILIZATION_RATIO': df['BU_TOTAL_DEBT_SUM'] / (df['BU_TOTAL_LIMIT_SUM'] + eps),
-            'DOCUMENTATION_COMPLETENESS': df[doc_cols].sum(axis=1) / len(doc_cols)
+            'DOCUMENTATION_COMPLETENESS': df[doc_cols].sum(axis=1) / len(doc_cols), #applicant character
+            'CONTACT_COMPLETENESS' : df[contact_cols].mean(axis=1) #applicant character
         }
         
         # Join everything at once
@@ -89,6 +93,7 @@ class DataProcessor:
         
         #ratio for documents now so i can drop the old columns
         df = df.drop(columns = doc_cols)
+        df = df.drop(columns = contact_cols)
 
         return df
     
@@ -128,7 +133,7 @@ class DataProcessor:
 
         return bureau_agg
     
-    def _get_correlated_columns(self, df: pd.DataFrame, threshold = 0.8):
+    def _get_correlated_columns(self, df: pd.DataFrame, threshold = 0.75): #originally 0.8
         correlation_mat = df.corr().abs()
 
         upper = correlation_mat.where(
