@@ -73,7 +73,8 @@ class DataProcessor:
             'CREDIT_TO_INCOME_RATIO': df['AMT_CREDIT'] / (df['AMT_INCOME_TOTAL'] + eps),
             'ANNUITY_TO_INCOME_RATIO': df['AMT_ANNUITY'] / (df['AMT_INCOME_TOTAL'] + eps),
             'GOODS_PRICE_TO_CREDIT_RATIO': df['AMT_GOODS_PRICE'] / (df['AMT_CREDIT'] + eps),
-            'DAYS_EMPLOYED_PERCENT': df['DAYS_EMPLOYED'] / df['DAYS_BIRTH']
+            'DAYS_EMPLOYED_PERCENT': df['DAYS_EMPLOYED'] / df['DAYS_BIRTH'],
+            'BU_UTILIZATION_RATIO': df['BU_TOTAL_DEBT_SUM'] / (df['BU_TOTAL_LIMIT_SUM'] + eps)
         }
         
         # Join everything at once
@@ -113,9 +114,5 @@ class DataProcessor:
         'BU_TOTAL_LIMIT_SUM',
         'BU_TOTAL_PROLONG_SUM'
         ]
-
-        bureau_agg['BU_UTILIZATION_RATIO'] = (
-            bureau_agg['BU_TOTAL_DEBT_SUM'] / (bureau_agg['BU_TOTAL_LIMIT_SUM'] + 1e-6)
-        )
 
         return bureau_agg
