@@ -27,7 +27,7 @@ Quantatative risk framework to estimate expected credit loss by modelling probab
 ## Project Roadmap
 - [x] Establish baseline Logistic Regression model (AUC: 0.725)
 - [x] **Bureau Data Integration**: Aggregate `bureau.csv` to capture historical credit behavior (AUC 0.7345)
-- [ ] **Automated Feature Selection**: Implement correlation filters to prune redundant variables
+- [x] **Automated Feature Selection**: Implement correlation filters to prune redundant variables (AUC 0.7326, a little lower but working with 59 columns vs 141 using application and bureau) 
 - [ ] **Ratio Synthesis**: Develop debt-to-income and annuity-to-credit features
 
 ### Phase 2: Mathematical Research (Low-Level)

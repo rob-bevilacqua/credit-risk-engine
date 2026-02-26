@@ -31,6 +31,8 @@ class DataProcessor:
         # feature extraction
         df = self._add_ratios(df)
 
+        df = self._prune_columns(df)
+
         # deep copy to unfragment
         df = df.copy() 
     
@@ -68,18 +70,27 @@ class DataProcessor:
         # avoid /0 error
         eps = 1e-6
         
+        #columns containing info on flag documents
+        doc_cols = [c for c in df.columns if 'FLAG_DOCUMENT' in c]
+
         # Create a dictionary for the new features
         feature_dict = {
             'CREDIT_TO_INCOME_RATIO': df['AMT_CREDIT'] / (df['AMT_INCOME_TOTAL'] + eps),
             'ANNUITY_TO_INCOME_RATIO': df['AMT_ANNUITY'] / (df['AMT_INCOME_TOTAL'] + eps),
             'GOODS_PRICE_TO_CREDIT_RATIO': df['AMT_GOODS_PRICE'] / (df['AMT_CREDIT'] + eps),
             'DAYS_EMPLOYED_PERCENT': df['DAYS_EMPLOYED'] / df['DAYS_BIRTH'],
-            'BU_UTILIZATION_RATIO': df['BU_TOTAL_DEBT_SUM'] / (df['BU_TOTAL_LIMIT_SUM'] + eps)
+            'BU_UTILIZATION_RATIO': df['BU_TOTAL_DEBT_SUM'] / (df['BU_TOTAL_LIMIT_SUM'] + eps),
+            'DOCUMENTATION_COMPLETENESS': df[doc_cols].sum(axis=1) / len(doc_cols)
         }
         
         # Join everything at once
         # This prevents fragmentation warnings
-        return pd.concat([df, pd.DataFrame(feature_dict, index=df.index)], axis=1)
+        df = pd.concat([df, pd.DataFrame(feature_dict, index=df.index)], axis=1)
+        
+        #ratio for documents now so i can drop the old columns
+        df = df.drop(columns = doc_cols)
+
+        return df
     
     def _agg_bureau(self, bureau_df: pd.DataFrame) -> pd.DataFrame:
         """
@@ -116,3 +127,25 @@ class DataProcessor:
         ]
 
         return bureau_agg
+    
+    def _get_correlated_columns(self, df: pd.DataFrame, threshold = 0.8):
+        correlation_mat = df.corr().abs()
+
+        upper = correlation_mat.where(
+        np.triu(np.ones(correlation_mat.shape), k=1).astype(bool)
+        )
+
+        to_drop = [column for column in upper.columns if any(upper[column] > threshold)]
+
+        return to_drop
+    
+    def _prune_columns(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Calculates correlation between columns and prunes redundant variables.
+        """
+        exclude = ['SK_ID_CURR', 'TARGET']
+        cols_to_check = [c for c in df.select_dtypes(include=[np.number]).columns if c not in exclude]
+        
+        to_drop = self._get_correlated_columns(df[cols_to_check])
+
+        return df.drop(columns=to_drop)
