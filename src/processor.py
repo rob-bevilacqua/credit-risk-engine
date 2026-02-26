@@ -20,9 +20,13 @@ class DataProcessor:
         print("Starting data processing")
         # main csv
         df = pd.read_csv(self.raw_dir / "application_train.csv")
-
         # Handle financial entry outliers
         df = self._clean_financials(df)
+
+        bureau_df = pd.read_csv(self.raw_dir / "bureau.csv")
+        bureau_agg = self._agg_bureau(bureau_df)
+
+        df = df.merge(bureau_agg, on="SK_ID_CURR", how="left")
 
         # feature extraction
         df = self._add_ratios(df)
@@ -75,3 +79,43 @@ class DataProcessor:
         # Join everything at once
         # This prevents fragmentation warnings
         return pd.concat([df, pd.DataFrame(feature_dict, index=df.index)], axis=1)
+    
+    def _agg_bureau(self, bureau_df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Collects past credit behaviour from bureau.csv, so it can be appended to the applicants application entry
+        """
+        eps = 1e-6
+        #flag active loans
+        bureau_df['IS_ACTIVE'] = (bureau_df['CREDIT_ACTIVE'] == 'Active').astype(int)
+        
+        agg_logic = {
+        'SK_ID_BUREAU': 'count', # how many past loans
+        'IS_ACTIVE': 'sum', # how many are active
+        'DAYS_CREDIT': 'mean', # avg length of 
+        'CREDIT_DAY_OVERDUE': 'mean', #avg length of overdue credit
+        'AMT_CREDIT_MAX_OVERDUE': 'max', #longest
+        'AMT_CREDIT_SUM': 'sum', 
+        'AMT_CREDIT_SUM_DEBT': 'sum',
+        'AMT_CREDIT_SUM_LIMIT': 'sum',
+        'CNT_CREDIT_PROLONG': 'sum'
+        }
+
+        bureau_agg = bureau_df.groupby('SK_ID_CURR').agg(agg_logic)
+
+        bureau_agg.columns = [
+        'BU_LOAN_COUNT',
+        'BU_ACTIVE_LOAN_COUNT',
+        'BU_DAYS_CREDIT_MEAN',
+        'BU_AVG_DAYS_OVERDUE',
+        'BU_MAX_OVERDUE',
+        'BU_TOTAL_CREDIT_SUM',
+        'BU_TOTAL_DEBT_SUM',
+        'BU_TOTAL_LIMIT_SUM',
+        'BU_TOTAL_PROLONG_SUM'
+        ]
+
+        bureau_agg['BU_UTILIZATION_RATIO'] = (
+            bureau_agg['BU_TOTAL_DEBT_SUM'] / (bureau_agg['BU_TOTAL_LIMIT_SUM'] + 1e-6)
+        )
+
+        return bureau_agg
